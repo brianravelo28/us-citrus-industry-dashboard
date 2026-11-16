@@ -2,29 +2,63 @@
 
 What the code does and why. Headline results are in the [README](../README.md); the numbers here are the supporting detail.
 
-Terms: **NASS** (USDA National Agricultural Statistics Service); **QuickStats** (NASS's online database and API); **bearing acres** (acres of trees old enough to bear fruit); **utilized production** (the part of the crop that was used, sold fresh or processed, counted in boxes); **value of production** (utilized production valued at the packinghouse-door price); **PHD equivalent** (packinghouse-door equivalent: a price or value measured at the packinghouse door, the point of first sale after packing costs are taken out, so fruit sold fresh and fruit processed are on one basis; NASS's Citrus Fruits Summary defines the packinghouse-door price this way); **HLB** (huanglongbing, citrus greening disease); **BLS** (US Bureau of Labor Statistics); **CPI-U** (consumer price index for all urban consumers, all items, a measure of the general price level); **constant dollars** (dollars expressed in the prices of one chosen season, here 2025, so that different seasons can be compared).
+Contents: [Terms](#terms) · [Data sources](#data-sources) · [Data and cleaning](#data-and-cleaning) · [Totals and gaps](#totals-and-gaps) · [Checks on the data](#checks-on-the-data) · [Constant dollars, shares and units](#constant-dollars-shares-and-units) · [Reproducibility](#reproducibility) · [Deployment notes](#deployment-notes)
 
-## Scope
+## Terms
 
-The project describes the US citrus industry by fruit and state (bearing acreage, yield, utilized production, price and value of production, 1990-2026) from NASS state surveys, with dollar values also shown in constant 2025 dollars using the BLS consumer price index. It builds no model and makes no forecast.
+| Term | Meaning |
+|---|---|
+| NASS | USDA National Agricultural Statistics Service |
+| QuickStats | NASS's online database and API |
+| Bearing acres | Acres of trees old enough to bear fruit |
+| Utilized production | The part of the crop that was used, sold fresh or processed, counted in boxes |
+| Value of production | Utilized production valued at the packinghouse-door price |
+| PHD equivalent | Packinghouse-door equivalent: a price or value measured at the packinghouse door, the point of first sale after packing costs are taken out, so fruit sold fresh and fruit processed are on one basis. NASS's Citrus Fruits Summary defines the packinghouse-door price this way |
+| Season | A crop year, labeled by its end year (2023 is the 2022-23 season) |
+| HLB | Huanglongbing, citrus greening disease |
+| BLS | US Bureau of Labor Statistics |
+| CPI-U | Consumer price index for all urban consumers, all items: a measure of the general price level |
+| Constant dollars | Dollars expressed in the prices of one chosen season, here 2025, so that different seasons can be compared |
 
-## Citrus data (NASS)
+## Data sources
 
-`src/fetch_industry_data.py` pulls state-level survey data from QuickStats (`agg_level_desc=STATE`, `source_desc=SURVEY`) for oranges, grapefruit, tangerines, lemons and tangelos, for Florida, California, Texas and Arizona, and writes `data/citrus_by_state.csv` (one row per fruit, state, year and measure). It also pulls NASS's own state totals across all citrus (`CITRUS TOTALS`; bearing acres and value of production, 2008-2026) into `data/citrus_totals_by_state.csv`. Both files were pulled on 2026-11-10 and are real observations; none is synthetic. NASS revises its newest season a year later, so treat each pull as a snapshot of its date.
+| Source | What | Version used |
+|---|---|---|
+| USDA NASS QuickStats, survey data at state level | Bearing acres, yield, utilized production (boxes and tons), value of production and price per box for oranges, grapefruit, tangerines, lemons and tangelos in Florida, California, Texas and Arizona, 1990-2026: `data/citrus_by_state.csv` | Pulled 2026-11-10; checksum in `data/manifest.json` |
+| USDA NASS QuickStats, commodity `CITRUS TOTALS` | NASS's own state totals across all citrus for bearing acres and value of production, 2008-2026: `data/citrus_totals_by_state.csv` | Pulled 2026-11-10; checksum in `data/manifest.json` |
+| BLS CPI-U, all items, US city average, not seasonally adjusted (series CUUR0000SA0) | Monthly consumer price index, October 1989 to October 2026: `data/cpi_u_monthly.csv` | Retrieved 2026-11-10; checksum in `data/manifest.json` |
+
+**Data foundation.** *Provenance:* the citrus series are NASS's published state-level survey estimates, the figures of its annual Citrus Fruits report, read through QuickStats; the price index is BLS's. *Time coverage:* annual seasons, 1990 to 2026 (this project's start), with NASS's all-citrus totals from 2008 and a monthly price index from October 1989. The season ending in 2026 is NASS's preliminary estimate and is revised a year later, so each pull is a snapshot of its date. *Sampling:* these are survey estimates, not a census. QuickStats's coefficient-of-variation field, the one place NASS would publish sampling error, is blank on every row checked (7,818 rows across six queries, on 2026-11-10), so no sampling error is carried through. *Quality and labels:* blanks, one conflicting yield and three small mismatches are counted below. *Real or synthetic:* all values are real observations; none is synthetic. *Licence:* NASS data are used under the NASS API Terms of Service, which require the notice "This product uses the NASS API but is not endorsed or certified by NASS" (shown in the dashboard); BLS content is in the public domain, and BLS's API terms ask for the retrieval date and the statement that BLS.gov cannot vouch for the data or analyses derived from them once retrieved (also shown). *A better source:* NASS's own state totals are used from 2008; the Census of Agriculture, every five years, would give acreage to cross-check against and is not used.
+
+## Data and cleaning
+
+**Measure.** `src/fetch_industry_data.py` pulls one statistic and unit per measure from QuickStats (`agg_level_desc=STATE`, `source_desc=SURVEY`) for each fruit and writes one row per fruit, state, year and measure. It also pulls NASS's own state totals (`CITRUS TOTALS`) for bearing acres and value. Both files were pulled on 2026-11-10.
 
 | Measure | QuickStats statistic and unit | Notes |
 |---|---|---|
 | Bearing acres | `AREA BEARING`, `ACRES` | |
 | Yield | `YIELD`, `BOXES / ACRE` | Florida oranges also carry a gallons-per-box series; only boxes per acre is used |
-| Utilized production | `PRODUCTION`, `BOXES` and `TONS`, utilization `UTILIZED` | Boxes cover 1990-2026; tons exist only for recent years, so tons are fetched but not used for totals |
-| Value of production | `PRODUCTION`, `$, PHD EQUIV` | Packinghouse-door equivalent dollars, nominal |
+| Utilized production | `PRODUCTION`, `BOXES` and `TONS`, utilization `UTILIZED` | Boxes cover 1990-2026; tons exist only for recent years (151 rows), so tons are fetched but not used by any chart |
+| Value of production | `PRODUCTION`, `$, PHD EQUIV` | Packinghouse-door equivalent dollars, as reported by NASS |
 | Price per box | `PRICE RECEIVED`, `$ / BOX, PHD EQUIV`, marketing year | |
 
-Only the all-classes total is used (not single varieties or fresh/processing splits), and the script stops if a state-year has more than one row.
+**Exclusions.** The fetch keeps the all-classes total and drops the rest, counting rows at each step in the order shown (`data/fetch_report.json`, written by the fetch):
 
-- **Seasons.** NASS labels a season by its end year (2023 is the 2022-23 season). The season ending in 2026 is NASS's preliminary estimate (published August 2026) and is marked `status = preliminary`; all earlier seasons are `reported`.
-- **Forecast rows are dropped.** QuickStats can return NASS's forecast for the coming season even when the request stops at 2026 (it returned 22 production rows for the season ending in 2027, issued October 2026). A forecast is not data, so anything after the last season is dropped, the drop is printed, and a test checks the file.
+| Step | Rows dropped | Rows left |
+|---|---|---|
+| Rows the 30 fruit-and-measure queries return (state level, survey, 1990-2026 as requested) | | 20,671 |
+| Not the all-classes total (single varieties and types) | 8,269 | 12,402 |
+| Not the stated utilization (the fresh and processing splits, or the all-practices row) | 5,585 | 6,817 |
+| A domain split instead of the total | 0 | 6,817 |
+| Not the final annual value: the monthly forecasts of the same season (`YEAR - JAN FORECAST` and so on) and the monthly price rows | 4,312 | 2,505 |
+| A season after 2026: NASS's forecast for the coming season | 22 | 2,483 |
+
+The final table has 2,483 rows. The two queries for NASS's all-citrus totals return 152 rows and drop none, so `data/citrus_totals_by_state.csv` has 152 rows. The script stops if a state-year has more than one row after the filters.
+
+- **Seasons.** The season ending in 2026 is NASS's preliminary estimate (published August 2026) and is marked `status = preliminary`; all earlier seasons are `reported`.
+- **Forecast rows are dropped.** QuickStats can return NASS's forecast for the coming season even when the request stops at 2026; it returned 22 production rows for the season ending in 2027 (issued October 2026). A forecast is not data, so anything after the last season is dropped, the drop is counted above, and a test checks the file.
 - **Blanks stay blank.** A value NASS withheld ("(D)") or marked not available is kept as a blank row with the reason in the `note` column. Of 2,483 rows, 63 are blank (48 withheld, 15 not available), mostly California and Arizona value and price figures for tangerines and lemons in 2009-2016 and Arizona oranges in 2010-2012. For Texas oranges and grapefruit, 1991 has a bearing-acres row and no yield, production, value or price row.
+- **Counts under charts.** The count under each chart is the number of NASS values behind it; under 30 it carries an asterisk. The only charts under 30 are the six Florida tangelos charts (27 values each).
 
 ## Totals and gaps
 
@@ -48,12 +82,18 @@ Only the all-classes total is used (not single varieties or fresh/processing spl
 - **Yield units differ by state.** Box weights differ across states, so raw boxes per acre are not comparable across states. The dashboard offers yield as a share of each state's own peak, and notes this on the yield chart.
 - **Dollars add up, boxes do not.** Different fruits and states have different box weights, so totals across them use acres and dollars only.
 
+## Reproducibility
+
+**Run order.** `python src/fetch_industry_data.py` (needs the `NASS_KEY` environment variable; nothing is stored in the code) writes the two NASS files, `data/fetch_report.json` and their manifest entries; `python src/fetch_cpi.py` (no key) writes the price-index file and its manifest entry. The dashboard and the tests read the committed files. Each fetch retries transient failures, then stops and writes nothing if any request fails, a response reports success and returns nothing, a state-year has more than one citrus row, or a month of the price index is missing inside the range.
+
+**Determinism.** The fetch has no random step: the same QuickStats and BLS responses give the same files, and a changed response gives a different file (both tested against mocked responses). Reruns in a clean Python 3.14.7 environment with the pinned packages gave files identical to the committed ones (the NASS fetch on 2026-11-10, the price-index fetch on 2026-11-16); NASS and BLS revise their newest values, so a later pull can differ.
+
+**Data version.** `data/manifest.json` records each data file's source, the date it was pulled, its row count and its SHA-256 (computed with line endings normalized, so a Windows and a Linux checkout agree); the fetch scripts write it, the dashboard's source notice reads the dates from it, and a test fails if a data file changes without its entry.
+
+**Software.** `requirements.txt` pins every package (Python 3.12 or newer; numpy 2.5 needs 3.12); `requirements-dev.txt` adds pytest. The live service runs Python 3.14.8. CI runs the tests on Python 3.12, 3.13 and 3.14 and starts the app under gunicorn to call `/healthz`, `/debugz` and the front page.
+
+**Tests.** Tests (`tests/`) cover the totals rule, the use of NASS's totals, the yield cross-check, the committed data and the manifest (each data file matches its recorded SHA-256 and row count), the fetch against mocked QuickStats responses (the filters, the row counts in the table above, and the failures: a duplicate state-year, a response that reports success and returns nothing, an unexpected value), constant dollars (the base season has a factor of 1; the bounds on the season alignment and the missing October 2025 month), the price-index fetch against mocked responses (including one that reports success and returns nothing), every dashboard control in both dollar modes, the layout (a collapsed "About this chart" section and a correct count under every chart, the asterisk under 30 values, the source notices), and `/healthz` and `/debugz`; they do not call the NASS or BLS APIs and do not check how the page looks, which is checked by hand after each deploy. `src/doc_figures.py` recomputes every figure quoted in the README, this document and the schema doc from the committed data, and a test fails if a document no longer states it.
+
 ## Deployment notes
 
 The dashboard runs on Render's free plan from `main` (`render.yaml`), started with `gunicorn src.app:server`; the health check path is `/healthz`, and the Render dashboard's settings override `render.yaml`. On 2026-11-11 `/debugz` on the live service reported Python 3.14.8 and the pinned package versions, and a resident memory of 116.8 MB just after the process started and 129.1 MB after all three tabs and both dollar modes had been used. These are hosted figures from one process; local figures differ.
-
-## Reproducibility
-
-The NASS key is read from the `NASS_KEY` environment variable; nothing is stored in the code. The BLS price-index fetch (`src/fetch_cpi.py`) needs no key. `data/manifest.json` records each data file's source, the date it was pulled, its row count and its SHA-256 (computed with line endings normalized, so a Windows and a Linux checkout agree); the fetch scripts write it and the dashboard's source notice reads the dates from it. The fetch retries transient failures, then stops and writes nothing if any request fails, a state-year has more than one citrus row, or the totals request returns nothing.
-
-What was run: the fetch ran end to end on Python 3.14 / pandas 3.1 on 2026-11-10, and the two committed NASS files are its output; the price-index file is the output of `src/fetch_cpi.py`, run the same day. Tests (`tests/`, run in CI on Python 3.13 and 3.14) cover the totals rule, the use of NASS's totals, the yield cross-check, the committed data and the manifest (each data file matches its recorded SHA-256 and row count), constant dollars (the base season has a factor of 1; the bounds on the season alignment and the missing October 2025 month), the price-index fetch against mocked responses (including one that reports success and returns nothing), every dashboard control in both dollar modes, the layout (a collapsed "About this chart" section and a correct count under every chart, the asterisk under 30 values, the source notices), and `/healthz` and `/debugz`; they do not call the NASS or BLS APIs and do not check how the page looks, which is checked by hand after each deploy. `src/doc_figures.py` recomputes every figure quoted in the README, this document and the schema doc from the committed data, and a test fails if a document no longer states it. `requirements.txt` is pinned; installed in a clean Python 3.14.7 environment on 2026-11-10 it gives a passing test run.
