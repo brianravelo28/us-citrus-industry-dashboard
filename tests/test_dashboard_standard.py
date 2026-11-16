@@ -119,6 +119,25 @@ def test_a_chart_resting_on_fewer_than_30_values_carries_an_asterisk_with_a_tool
     assert not [c for c in walk(large) if isinstance(c, html.Abbr)]
 
 
+def test_the_only_charts_under_30_values_are_the_six_florida_tangelos_charts(app_module):
+    """Backs the Methodology's statement about which charts carry the asterisk."""
+    import re
+    n_of = lambda footer: int(re.search(r"n = ([\d,]+)", text_of(footer.children[1])).group(1).replace(",", ""))
+    small = []
+    for fruit in app_module.FRUITS:
+        for metric in app_module.METRICS:
+            for mode in ("real", "nominal"):
+                n = n_of(app_module.update_fruit(fruit, metric, mode)[1])
+                if n < 30:
+                    small.append((fruit, metric, n))
+    for state in app_module.STATES:
+        _, a_note, _, v_note = app_module.update_state(state, "real")
+        small += [(state, "state chart", n_of(f)) for f in (a_note, v_note) if n_of(f) < 30]
+    small += [("overview", "chart", n) for n in (n_of(app_module.acres_footer()), n_of(app_module.share_footer()),
+                                                 app_module.value_by_fruit_count()) if n < 30]
+    assert sorted({s[0] for s in small}) == ["Tangelos"] and len({s[1] for s in small}) == 6 and {s[2] for s in small} == {27}
+
+
 def test_healthz_is_a_real_endpoint_not_the_dash_front_page(app_module):
     client = app_module.server.test_client()
     r = client.get("/healthz")

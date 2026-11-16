@@ -9,6 +9,7 @@ number that changes without the text changing fails the build.
 Run from anywhere; the data files are found relative to this file.
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -71,6 +72,17 @@ def figures(root=ROOT):
              q3_n=cd.count_values(df, "value_of_production_usd",
                                   years=[y for y in value_state.dropna(how="all").index if y < int(tot["year"].min())])
              + cd.count_totals(tot, "value_of_production_usd", years=list(value_state.dropna(how="all").index)))
+    report = json.loads((root / "data/fetch_report.json").read_text(encoding="utf-8"))
+    fr, tr = report["citrus_by_state"], report["citrus_totals"]
+    steps = [("dropped_not_all_classes",), ("dropped_other_utilization",), ("dropped_domain_split",),
+             ("dropped_other_reference_period",), ("dropped_after_last_season",)]
+    left, funnel = fr["query_rows"], []
+    for (key,) in steps:
+        left -= fr[key]
+        funnel.append((fr[key], left))
+    f.update(funnel_query=fr["query_rows"], funnel=funnel, funnel_final=fr["final_rows"], forecast_rows=fr["dropped_after_last_season"],
+             totals_query=tr["query_rows"], totals_dropped=tr["query_rows"] - tr["final_rows"],
+             tons_rows=int((df["measure"] == "production_tons").sum()))
     pulled = {k: v["pulled"] for k, v in manifest.load(root / "data/manifest.json").items()}
     f.update(nass_pulled=pulled["data/citrus_by_state.csv"], bls_pulled=pulled["data/cpi_u_monthly.csv"])
 
@@ -191,6 +203,12 @@ def phrases(f):
         f"Florida's is highest in {f['fl_peak_year']} as reported and in {f['fl_real_peak_year']} (${b(f['fl_real_peak'])} billion) in 2025 dollars",
     ]
     meth.append(f"Both files were pulled on {f['nass_pulled']}")
+    meth += [f"| | {c(f['funnel_query'])} |"] + [f"| {c(d)} | {c(l)} |" for d, l in f["funnel"]]
+    meth += [f"The final table has {c(f['funnel_final'])} rows",
+             f"return {f['totals_query']} rows and drop {'none' if f['totals_dropped'] == 0 else f['totals_dropped']}",
+             f"it returned {f['forecast_rows']} production rows for the season ending in 2027",
+             f"tons exist only for recent years ({f['tons_rows']} rows)"]
+    assert f["funnel"][-1][1] == f["funnel_final"]                      # the funnel table ends at the final row count
     schema = [f"pulled on {f['nass_pulled']}", f"{f['totals_rows']} rows", f"{f['cpi_rows']} rows", f"{c(f['rows'])} rows",
               f"{f['blank']} of {c(f['rows'])} ({f['withheld']} withheld, {f['not_available']} not available)"]
     return [("README", p) for p in readme] + [("METHODOLOGY", p) for p in meth] + [("SCHEMA", p) for p in schema]
