@@ -42,6 +42,7 @@ MANIFEST
 # Data: the CSVs the app reads are committed (see docs/SCHEMA.md); other formats are not
 data/*.json
 !data/manifest.json
+!data/fetch_report.json
 data/*.xlsx
 *.parquet
 
@@ -88,19 +89,6 @@ build/
 dist/
 *.egg-info/
 
-# Keep these (documentation & code)
-!README.md
-!QUICKSTART.md
-!DEPLOYMENT.md
-!PROJECT_SUMMARY.md
-!BUILD_SUMMARY.txt
-!requirements.txt
-!LICENSE
-!.gitignore
-
 # Local tooling
 .claude/
 .Rhistory
-
-# Personal study notes, kept locally only
-docs/WALKTHROUGH.md
