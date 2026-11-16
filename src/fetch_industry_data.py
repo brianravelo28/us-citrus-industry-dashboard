@@ -91,8 +91,15 @@ MEASURES = {
 SUPPRESSED = {"(D)": "withheld (D)", "(NA)": "not available (NA)", "(S)": "suppressed (S)", "(Z)": "less than half the unit (Z)", "": "blank"}
 
 
-def fetch_series(fruit, stat, unit, period, util):
-    """Rows for one fruit and measure, all states, one row per state and year."""
+STAGES = ("query_rows", "all_classes", "utilization", "domain_total", "reference_period")
+
+
+def fetch_series(fruit, stat, unit, period, util, measure=None, funnel=None):
+    """Rows for one fruit and measure, all states, one row per state and year.
+
+    The query asks for state-level survey rows of one statistic and unit; the filters below then keep the
+    all-classes total. When `funnel` (a list) is given, the row count after each stage is appended to it.
+    """
     params = {
         "key": require_key("NASS_KEY"), "commodity_desc": fruit, "agg_level_desc": "STATE",
         "source_desc": "SURVEY", "statisticcat_desc": stat, "unit_desc": unit,
@@ -100,13 +107,40 @@ def fetch_series(fruit, stat, unit, period, util):
     }
     rows = get_json("https://quickstats.nass.usda.gov/api/api_GET/", params).get("data", [])
     df = pd.DataFrame(rows)
+    counts = {"commodity": fruit, "measure": measure or stat, "query_rows": len(df)}
     if df.empty:
-        return df
-    # Totals only: all classes, the stated utilization, no domain split.
-    df = df[(df["class_desc"] == "ALL CLASSES") & (df["util_practice_desc"] == util)
-            & (df["domain_desc"] == "TOTAL")]
-    df = df[df["reference_period_desc"] == period]
+        counts.update({s: 0 for s in STAGES[1:]})
+    else:
+        # Totals only: all classes, the stated utilization, no domain split, the stated reference period (in this order).
+        df = df[df["class_desc"] == "ALL CLASSES"]
+        counts["all_classes"] = len(df)
+        df = df[df["util_practice_desc"] == util]
+        counts["utilization"] = len(df)
+        df = df[df["domain_desc"] == "TOTAL"]
+        counts["domain_total"] = len(df)
+        df = df[df["reference_period_desc"] == period]
+        counts["reference_period"] = len(df)
+    if funnel is not None:
+        funnel.append(counts)
     return df
+
+
+def summarize_funnel(funnel, dropped_after_last_season, final_rows):
+    """Total the per-series counts into the exclusions that take the query's rows down to the final table."""
+    t = {s: sum(c[s] for c in funnel) for s in STAGES}
+    summary = {
+        "query_rows": t["query_rows"],
+        "dropped_not_all_classes": t["query_rows"] - t["all_classes"],
+        "dropped_other_utilization": t["all_classes"] - t["utilization"],
+        "dropped_domain_split": t["utilization"] - t["domain_total"],
+        "dropped_other_reference_period": t["domain_total"] - t["reference_period"],
+        "dropped_after_last_season": int(dropped_after_last_season),
+        "final_rows": int(final_rows),
+        "series": funnel,
+    }
+    if t["reference_period"] - summary["dropped_after_last_season"] != summary["final_rows"]:
+        raise FetchError("the row counts do not add up from the query to the final table")
+    return summary
 
 
 def parse_value(raw, label):
@@ -119,11 +153,12 @@ def parse_value(raw, label):
         raise FetchError(f"{label}: unexpected value {raw!r}")
 
 
-def build_table():
-    records = []
+def build_table(report=None):
+    """The fruit-by-state table. When `report` (a dict) is given it receives the row-count funnel."""
+    records, funnel = [], []
     for fruit in FRUITS:
         for measure, (stat, unit, period, util) in MEASURES.items():
-            df = fetch_series(fruit, stat, unit, period, util)
+            df = fetch_series(fruit, stat, unit, period, util, measure=measure, funnel=funnel)
             if df.empty:
                 print(f"  [--] {fruit} {measure}: no rows")
                 continue
@@ -139,9 +174,9 @@ def build_table():
                 })
             print(f"  [OK] {fruit.title()} {measure}: {df['state_alpha'].nunique()} states, {len(df)} rows")
             time.sleep(0.2)
-    out = pd.DataFrame(records).sort_values(["fruit", "state", "measure", "year"]).reset_index(drop=True)
-    if out.empty:
+    if not records:
         raise FetchError("NASS returned no citrus rows")
+    out = pd.DataFrame(records).sort_values(["fruit", "state", "measure", "year"]).reset_index(drop=True)
     # QuickStats can return NASS's forecast for the coming season even when the request stops at
     # END_YEAR (observed: year 2027 production, issued October 2026). A forecast is not data, so
     # anything after END_YEAR is dropped, and the drop is reported.
@@ -149,7 +184,10 @@ def build_table():
     if len(after):
         print(f"  [NOTE] dropped {len(after)} rows after {END_YEAR} (NASS forecasts for the coming season): "
               f"years {sorted(after['year'].unique())}, measures {sorted(after['measure'].unique())}")
-    return out[out["year"] <= END_YEAR].reset_index(drop=True)
+    final = out[out["year"] <= END_YEAR].reset_index(drop=True)
+    if report is not None:
+        report.update(summarize_funnel(funnel, len(after), len(final)))
+    return final
 
 
 TOTALS_COMMODITY = "CITRUS TOTALS"
@@ -157,16 +195,17 @@ TOTALS_MEASURES = ("bearing_acres", "value_of_production_usd")
 TOTALS_FILE = "data/citrus_totals_by_state.csv"
 
 
-def build_totals():
+def build_totals(report=None):
     """NASS's own state totals across all citrus (acres and value), one row per state, year and measure.
 
     QuickStats publishes them for 2008 on. Same filters and the same handling of withheld values and
-    forecast rows as the fruit table. Raises FetchError rather than return a partial table.
+    forecast rows as the fruit table. Raises FetchError rather than return a partial table. When `report`
+    (a dict) is given it receives the row-count funnel.
     """
-    records = []
+    records, funnel = [], []
     for measure in TOTALS_MEASURES:
         stat, unit, period, util = MEASURES[measure]
-        df = fetch_series(TOTALS_COMMODITY, stat, unit, period, util)
+        df = fetch_series(TOTALS_COMMODITY, stat, unit, period, util, measure=measure, funnel=funnel)
         if df.empty:
             raise FetchError(f"{TOTALS_COMMODITY} {measure}: no rows")
         if df.duplicated(["state_alpha", "year"]).any():
@@ -179,7 +218,24 @@ def build_totals():
         print(f"  [OK] {TOTALS_COMMODITY} {measure}: {df['state_alpha'].nunique()} states, {len(df)} rows")
         time.sleep(0.2)
     out = pd.DataFrame(records).sort_values(["measure", "state", "year"]).reset_index(drop=True)
-    return out[out["year"] <= END_YEAR].reset_index(drop=True)
+    final = out[out["year"] <= END_YEAR].reset_index(drop=True)
+    if report is not None:
+        report.update(summarize_funnel(funnel, len(out) - len(final), len(final)))
+    return final
+
+
+REPORT_FILE = "data/fetch_report.json"
+
+
+def write_report(fruit_report, totals_report, path=REPORT_FILE):
+    """data/fetch_report.json: the row counts from the query to each final table, and the pull date."""
+    import datetime
+    import json
+    doc = {"pulled": datetime.date.today().isoformat(), "last_season": END_YEAR,
+           "citrus_by_state": fruit_report, "citrus_totals": totals_report}
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(doc, f, indent=1, sort_keys=True)
+        f.write("\n")
 
 
 def totals_check(fruit_df, totals, tolerance=0.01):
@@ -262,14 +318,16 @@ def consistency_check(df, tolerance=0.15):
 
 def main():
     print("=" * 60 + "\nCITRUS BY STATE (USDA NASS, survey, 1990-%d)\n" % END_YEAR + "=" * 60)
+    fruit_report, totals_report = {}, {}
     try:
-        df = build_table()
-        totals = build_totals()
+        df = build_table(fruit_report)
+        totals = build_totals(totals_report)
     except FetchError as e:
         print(f"\n[FAILED] {e}\nNothing was written; existing data files are unchanged.")
         sys.exit(1)
     df.to_csv("data/citrus_by_state.csv", index=False)
     totals.to_csv(TOTALS_FILE, index=False)
+    write_report(fruit_report, totals_report)
     manifest.record("data/citrus_by_state.csv", "USDA NASS QuickStats, survey, state level", len(df))
     manifest.record(TOTALS_FILE, "USDA NASS QuickStats, CITRUS TOTALS, state level", len(totals))
     print(f"\n[OK] Saved data/citrus_by_state.csv ({len(df)} rows) and {TOTALS_FILE} ({len(totals)} rows)")

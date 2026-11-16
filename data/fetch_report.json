@@ -1,0 +1,314 @@
+{
+ "citrus_by_state": {
+  "dropped_after_last_season": 22,
+  "dropped_domain_split": 0,
+  "dropped_not_all_classes": 8269,
+  "dropped_other_reference_period": 4312,
+  "dropped_other_utilization": 5585,
+  "final_rows": 2483,
+  "query_rows": 20671,
+  "series": [
+   {
+    "all_classes": 134,
+    "commodity": "ORANGES",
+    "domain_total": 134,
+    "measure": "bearing_acres",
+    "query_rows": 402,
+    "reference_period": 134,
+    "utilization": 134
+   },
+   {
+    "all_classes": 133,
+    "commodity": "ORANGES",
+    "domain_total": 133,
+    "measure": "yield_boxes_per_acre",
+    "query_rows": 400,
+    "reference_period": 133,
+    "utilization": 133
+   },
+   {
+    "all_classes": 517,
+    "commodity": "ORANGES",
+    "domain_total": 490,
+    "measure": "production_boxes",
+    "query_rows": 1511,
+    "reference_period": 136,
+    "utilization": 490
+   },
+   {
+    "all_classes": 453,
+    "commodity": "ORANGES",
+    "domain_total": 399,
+    "measure": "production_tons",
+    "query_rows": 1372,
+    "reference_period": 45,
+    "utilization": 399
+   },
+   {
+    "all_classes": 378,
+    "commodity": "ORANGES",
+    "domain_total": 133,
+    "measure": "value_of_production_usd",
+    "query_rows": 1129,
+    "reference_period": 133,
+    "utilization": 133
+   },
+   {
+    "all_classes": 2010,
+    "commodity": "ORANGES",
+    "domain_total": 693,
+    "measure": "price_usd_per_box",
+    "query_rows": 5226,
+    "reference_period": 130,
+    "utilization": 693
+   },
+   {
+    "all_classes": 131,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 131,
+    "measure": "bearing_acres",
+    "query_rows": 193,
+    "reference_period": 131,
+    "utilization": 131
+   },
+   {
+    "all_classes": 130,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 130,
+    "measure": "yield_boxes_per_acre",
+    "query_rows": 192,
+    "reference_period": 130,
+    "utilization": 130
+   },
+   {
+    "all_classes": 511,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 483,
+    "measure": "production_boxes",
+    "query_rows": 707,
+    "reference_period": 133,
+    "utilization": 483
+   },
+   {
+    "all_classes": 449,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 395,
+    "measure": "production_tons",
+    "query_rows": 611,
+    "reference_period": 45,
+    "utilization": 395
+   },
+   {
+    "all_classes": 374,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 133,
+    "measure": "value_of_production_usd",
+    "query_rows": 560,
+    "reference_period": 133,
+    "utilization": 133
+   },
+   {
+    "all_classes": 2095,
+    "commodity": "GRAPEFRUIT",
+    "domain_total": 732,
+    "measure": "price_usd_per_box",
+    "query_rows": 3281,
+    "reference_period": 130,
+    "utilization": 732
+   },
+   {
+    "all_classes": 100,
+    "commodity": "TANGERINES",
+    "domain_total": 100,
+    "measure": "bearing_acres",
+    "query_rows": 100,
+    "reference_period": 100,
+    "utilization": 100
+   },
+   {
+    "all_classes": 100,
+    "commodity": "TANGERINES",
+    "domain_total": 100,
+    "measure": "yield_boxes_per_acre",
+    "query_rows": 100,
+    "reference_period": 100,
+    "utilization": 100
+   },
+   {
+    "all_classes": 369,
+    "commodity": "TANGERINES",
+    "domain_total": 348,
+    "measure": "production_boxes",
+    "query_rows": 369,
+    "reference_period": 102,
+    "utilization": 348
+   },
+   {
+    "all_classes": 313,
+    "commodity": "TANGERINES",
+    "domain_total": 277,
+    "measure": "production_tons",
+    "query_rows": 313,
+    "reference_period": 33,
+    "utilization": 277
+   },
+   {
+    "all_classes": 289,
+    "commodity": "TANGERINES",
+    "domain_total": 100,
+    "measure": "value_of_production_usd",
+    "query_rows": 289,
+    "reference_period": 100,
+    "utilization": 100
+   },
+   {
+    "all_classes": 1166,
+    "commodity": "TANGERINES",
+    "domain_total": 398,
+    "measure": "price_usd_per_box",
+    "query_rows": 1166,
+    "reference_period": 100,
+    "utilization": 398
+   },
+   {
+    "all_classes": 76,
+    "commodity": "LEMONS",
+    "domain_total": 76,
+    "measure": "bearing_acres",
+    "query_rows": 76,
+    "reference_period": 76,
+    "utilization": 76
+   },
+   {
+    "all_classes": 76,
+    "commodity": "LEMONS",
+    "domain_total": 76,
+    "measure": "yield_boxes_per_acre",
+    "query_rows": 76,
+    "reference_period": 76,
+    "utilization": 76
+   },
+   {
+    "all_classes": 309,
+    "commodity": "LEMONS",
+    "domain_total": 309,
+    "measure": "production_boxes",
+    "query_rows": 309,
+    "reference_period": 79,
+    "utilization": 309
+   },
+   {
+    "all_classes": 303,
+    "commodity": "LEMONS",
+    "domain_total": 263,
+    "measure": "production_tons",
+    "query_rows": 303,
+    "reference_period": 33,
+    "utilization": 263
+   },
+   {
+    "all_classes": 203,
+    "commodity": "LEMONS",
+    "domain_total": 76,
+    "measure": "value_of_production_usd",
+    "query_rows": 203,
+    "reference_period": 76,
+    "utilization": 76
+   },
+   {
+    "all_classes": 1233,
+    "commodity": "LEMONS",
+    "domain_total": 433,
+    "measure": "price_usd_per_box",
+    "query_rows": 1233,
+    "reference_period": 76,
+    "utilization": 433
+   },
+   {
+    "all_classes": 27,
+    "commodity": "TANGELOS",
+    "domain_total": 27,
+    "measure": "bearing_acres",
+    "query_rows": 27,
+    "reference_period": 27,
+    "utilization": 27
+   },
+   {
+    "all_classes": 27,
+    "commodity": "TANGELOS",
+    "domain_total": 27,
+    "measure": "yield_boxes_per_acre",
+    "query_rows": 27,
+    "reference_period": 27,
+    "utilization": 27
+   },
+   {
+    "all_classes": 55,
+    "commodity": "TANGELOS",
+    "domain_total": 55,
+    "measure": "production_boxes",
+    "query_rows": 55,
+    "reference_period": 27,
+    "utilization": 55
+   },
+   {
+    "all_classes": 46,
+    "commodity": "TANGELOS",
+    "domain_total": 34,
+    "measure": "production_tons",
+    "query_rows": 46,
+    "reference_period": 6,
+    "utilization": 34
+   },
+   {
+    "all_classes": 81,
+    "commodity": "TANGELOS",
+    "domain_total": 27,
+    "measure": "value_of_production_usd",
+    "query_rows": 81,
+    "reference_period": 27,
+    "utilization": 27
+   },
+   {
+    "all_classes": 314,
+    "commodity": "TANGELOS",
+    "domain_total": 105,
+    "measure": "price_usd_per_box",
+    "query_rows": 314,
+    "reference_period": 27,
+    "utilization": 105
+   }
+  ]
+ },
+ "citrus_totals": {
+  "dropped_after_last_season": 0,
+  "dropped_domain_split": 0,
+  "dropped_not_all_classes": 0,
+  "dropped_other_reference_period": 0,
+  "dropped_other_utilization": 0,
+  "final_rows": 152,
+  "query_rows": 152,
+  "series": [
+   {
+    "all_classes": 76,
+    "commodity": "CITRUS TOTALS",
+    "domain_total": 76,
+    "measure": "bearing_acres",
+    "query_rows": 76,
+    "reference_period": 76,
+    "utilization": 76
+   },
+   {
+    "all_classes": 76,
+    "commodity": "CITRUS TOTALS",
+    "domain_total": 76,
+    "measure": "value_of_production_usd",
+    "query_rows": 76,
+    "reference_period": 76,
+    "utilization": 76
+   }
+  ]
+ },
+ "last_season": 2026,
+ "pulled": "2026-11-10"
+}

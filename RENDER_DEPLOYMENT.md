@@ -15,7 +15,7 @@ On the free tier the service sleeps when idle, so the first request after a paus
 
 `src/app.py` exposes the Flask server as `server` for gunicorn. `render.yaml` in the repo root records these settings as a reference.
 
-**Python version.** The service sets `PYTHON_VERSION` to `3.14.8` in its Environment settings in the Render dashboard (set 2026-10-28). Render requires the full `x.y.z` form for this variable. `requirements.txt` is pinned to package versions tested on Python 3.14, and CI tests Python 3.13 and 3.14. `render.yaml` lists the same value as a reference, but the live service is configured in the dashboard, not from that file.
+**Python version.** The service sets `PYTHON_VERSION` to `3.14.8` in its Environment settings in the Render dashboard (set 2026-10-28). Render requires the full `x.y.z` form for this variable. `requirements.txt` is pinned to package versions tested on Python 3.14, and CI tests Python 3.12, 3.13 and 3.14 and starts the app under gunicorn (the production server) to call `/healthz`, `/debugz` and the front page. `render.yaml` lists the same value as a reference, but the live service is configured in the dashboard, not from that file.
 
 ## Endpoints for the host
 

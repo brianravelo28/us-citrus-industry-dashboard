@@ -8,11 +8,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13", "3.14"]   # current (matches Render) and one below
+        python-version: ["3.12", "3.13", "3.14"]   # every version the pins support; Render runs 3.14
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -r requirements.txt pytest
+      - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
+      - name: Serve with gunicorn and call the endpoints
+        run: |
+          gunicorn src.app:server --bind 127.0.0.1:8000 --daemon --pid gunicorn.pid --error-logfile gunicorn.log
+          curl --fail --silent --show-error --retry 10 --retry-delay 2 --retry-connrefused http://127.0.0.1:8000/healthz
+          echo
+          curl --fail --silent --show-error http://127.0.0.1:8000/debugz
+          echo
+          curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8000/
+          kill "$(cat gunicorn.pid)"
+      - name: gunicorn log
+        if: failure()
+        run: cat gunicorn.log || true

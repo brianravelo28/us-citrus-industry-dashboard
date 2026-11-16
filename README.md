@@ -78,10 +78,10 @@ The app reads the committed files, so no key is needed at runtime. It is hosted 
 
 ## Tests
 
-56 tests run in about 20 seconds with no network or API key. They check the totals and constant-dollar rules, the price-index fetch (against mocked responses), every dashboard control in both dollar modes, the layout and endpoints, and the data manifest; `src/doc_figures.py` recomputes every figure quoted in the documents, and a test fails if one is no longer stated. They do not cover the live deployment or how the page looks; those are checked by hand after each deploy. CI runs them on Python 3.13 and 3.14 ([the full list](docs/METHODOLOGY.md#reproducibility)).
+67 tests run in about 30 seconds with no network or API key. They check the totals and constant-dollar rules, the price-index fetch (against mocked responses), every dashboard control in both dollar modes, the layout and endpoints, and the data manifest; `src/doc_figures.py` recomputes every figure quoted in the documents, and a test fails if one is no longer stated. They do not cover the live deployment or how the page looks; those are checked by hand after each deploy. CI runs them on Python 3.12, 3.13 and 3.14 and starts the app under gunicorn to call the endpoints ([the full list](docs/METHODOLOGY.md#reproducibility)).
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r requirements-dev.txt
 python -m pytest
 ```
 

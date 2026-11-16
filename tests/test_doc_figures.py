@@ -15,7 +15,7 @@ def test_the_checker_notices_a_figure_that_is_not_in_the_text(tmp_path):
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel).write_text((doc_figures.ROOT / rel).read_text(encoding="utf-8"), encoding="utf-8")
     (tmp_path / "data").mkdir()
-    for name in ("citrus_by_state.csv", "citrus_totals_by_state.csv", "cpi_u_monthly.csv", "manifest.json"):
+    for name in ("citrus_by_state.csv", "citrus_totals_by_state.csv", "cpi_u_monthly.csv", "manifest.json", "fetch_report.json"):
         (tmp_path / "data" / name).write_bytes((doc_figures.ROOT / "data" / name).read_bytes())
     assert doc_figures.missing(tmp_path) == []
     readme = tmp_path / "README.md"
