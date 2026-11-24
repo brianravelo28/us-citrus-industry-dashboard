@@ -1,6 +1,6 @@
-﻿# Pinned to the versions the live Render deployment runs on (Python 3.14).
+# Pinned to the versions the live Render deployment runs on (Python 3.14).
 # These pins do not install on Python 3.9; use Python 3.12+ (numpy 2.5 needs 3.12; CI tests 3.12, 3.13 and 3.14).
-dash==4.5.0
+dash==4.5.1
 plotly==7.1.0
 pandas==3.1.1
 numpy==2.5.5
